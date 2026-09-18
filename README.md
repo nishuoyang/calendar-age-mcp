@@ -1,5 +1,7 @@
 # data-mcp-server
 
+[English](README.md) | [简体中文](README.zh.md)
+
 `data-mcp-server` is a deterministic MCP server for Gregorian and Chinese
 lunar calendar conversion and calendar-aware age calculation.
 
@@ -150,4 +152,3 @@ calendar years.
 
 See [docs/adr/0001-v0.1-contract-decisions.md](docs/adr/0001-v0.1-contract-decisions.md)
 for the frozen v0.1 decisions.
-
