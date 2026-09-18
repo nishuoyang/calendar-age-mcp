@@ -19,7 +19,7 @@ server.
 - Initial calendars: Gregorian and Chinese lunar.
 - Initial age systems: Gregorian completed years, Chinese lunar completed
   years, Chinese nominal age, and chronological elapsed days.
-- Initial transport: stdio.
+- Initial transport: stateless Streamable HTTP at `POST /mcp`.
 - Recommended language: TypeScript.
 - Runtime behavior: deterministic and offline after dependencies are installed.
 

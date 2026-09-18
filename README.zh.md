@@ -18,7 +18,7 @@
 - 农历周岁
 - 以农历新年为分界的虚岁
 
-v0.1 使用本地 stdio 通信。所有工具调用均为只读、幂等、确定性操作，运行时不访问网络。
+v0.1 使用无状态 Streamable HTTP，统一通过 `POST /mcp` 提供服务。所有工具调用均为只读、幂等、确定性操作，运行时不发起外部网络请求。
 
 ## 支持范围
 
@@ -45,6 +45,25 @@ npm run build
 npm test
 ```
 
+启动服务：
+
+```powershell
+npm start
+```
+
+默认端点：
+
+```text
+http://127.0.0.1:3000/mcp
+```
+
+环境变量：
+
+- `MCP_PORT`：监听端口，默认 `3000`
+- `MCP_ALLOWED_ORIGINS`：可选的浏览器 Origin 白名单，多个值使用逗号分隔
+
+服务默认绑定 `127.0.0.1`，校验 `Host` 和浏览器 `Origin` 请求头，并返回 JSON 响应。发送到 `/mcp` 的 `GET` 和 `DELETE` 请求会返回 `405 Method Not Allowed`。
+
 开发时可执行：
 
 ```powershell
@@ -60,27 +79,24 @@ dist/index.js
 
 ## MCP 客户端配置
 
-先构建项目，然后在 MCP 客户端中配置服务进程：
+先构建并启动服务，然后使用支持 Streamable HTTP 的 MCP 客户端连接：
 
 ```json
 {
   "mcpServers": {
     "calendar-age-mcp": {
-      "command": "node",
-      "args": [
-        "E:\\AiProject\\data-mcp\\dist\\index.js"
-      ]
+      "url": "http://127.0.0.1:3000/mcp"
     }
   }
 }
 ```
 
-服务通过 stdio 与客户端通信：
+通信方式：
 
-- MCP 客户端启动 `node dist/index.js`
-- 请求通过子进程的 `stdin` 发送
-- 响应通过子进程的 `stdout` 返回
-- `stderr` 保留给诊断日志
+- MCP 客户端向 `POST /mcp` 发送 JSON-RPC 请求
+- 服务以 JSON 响应返回 MCP 消息
+- 服务不创建会话，不保存跨请求状态
+- `GET /mcp` 和 `DELETE /mcp` 返回 `405`
 
 ## 工具
 
@@ -202,5 +218,6 @@ dist/index.js
 - 公历 2 月 29 日生日只在真实存在 2 月 29 日的闰年计入生日；服务不会自行采用不同地区的 2 月 28 日或 3 月 1 日规则。
 - 当前只支持公历和中国农历，尚未实现伊斯兰历、希伯来历、波斯历等扩展历法。
 - 如需扩大支持日期范围，必须增加独立来源的边界 fixture 并更新 ADR。
+- v0.1 Streamable HTTP 不包含认证，并且只绑定 localhost。未增加认证和 TLS 前，不应直接暴露到公网。
 
-更多设计决策见 [docs/adr/0001-v0.1-contract-decisions.md](docs/adr/0001-v0.1-contract-decisions.md)。
+Streamable HTTP 传输决策见 [docs/adr/0002-streamable-http-transport.md](docs/adr/0002-streamable-http-transport.md)。

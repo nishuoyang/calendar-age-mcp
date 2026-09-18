@@ -19,8 +19,9 @@ Supported age conventions:
 - Chinese lunar completed years
 - Chinese nominal age using Chinese New Year
 
-The v0.1 transport is local stdio. Runtime tool calls are read-only,
-idempotent, deterministic, and perform no network access.
+The server uses stateless Streamable HTTP over `POST /mcp`. Runtime tool calls
+are read-only, idempotent, deterministic, and perform no outbound network
+access.
 
 ## Supported Range
 
@@ -41,18 +42,37 @@ npm run build
 npm test
 ```
 
+Start the server:
+
+```powershell
+npm start
+```
+
+The default endpoint is:
+
+```text
+http://127.0.0.1:3000/mcp
+```
+
+Environment variables:
+
+- `MCP_PORT`: listening port, default `3000`
+- `MCP_ALLOWED_ORIGINS`: optional comma-separated browser origin allowlist
+
+The server binds to `127.0.0.1`, validates the `Host` and browser `Origin`
+headers, and returns JSON responses. `GET` and `DELETE` requests to `/mcp`
+return `405 Method Not Allowed`.
+
 ## MCP Client Configuration
 
-Build the server first, then point the client at the emitted entry point:
+Build and start the server first, then configure a client that supports
+Streamable HTTP:
 
 ```json
 {
   "mcpServers": {
-    "data-mcp-server": {
-      "command": "node",
-      "args": [
-        "E:\\AiProject\\data-mcp\\dist\\index.js"
-      ]
+    "calendar-age-mcp": {
+      "url": "http://127.0.0.1:3000/mcp"
     }
   }
 }
@@ -149,6 +169,8 @@ calendar years.
   no regional February 28 versus March 1 policy is inferred.
 - The declared range can be extended only after additional boundary fixtures
   are validated against an independent calendar implementation.
+- v0.1 Streamable HTTP has no authentication and binds to localhost. Do not
+  expose it through a public interface without adding authentication and TLS.
 
-See [docs/adr/0001-v0.1-contract-decisions.md](docs/adr/0001-v0.1-contract-decisions.md)
-for the frozen v0.1 decisions.
+See [docs/adr/0002-streamable-http-transport.md](docs/adr/0002-streamable-http-transport.md)
+for the Streamable HTTP transport decision.

@@ -10,6 +10,11 @@ export const SUPPORTED_LUNAR_MAX_YEAR = 2100;
 export const DEFAULT_TIMEZONE = "Asia/Shanghai";
 export const MAX_BIRTHDAY_RANGE_YEARS = 100;
 
+export const DEFAULT_HTTP_HOST = "127.0.0.1";
+export const DEFAULT_HTTP_PORT = 3000;
+export const MCP_HTTP_PATH = "/mcp";
+export const MAX_HTTP_BODY_BYTES = 1_048_576;
+
 export const SUPPORTED_CALENDARS = ["gregorian", "chinese_lunar"] as const;
 
 export const DATE_RANGE_DETAILS = {

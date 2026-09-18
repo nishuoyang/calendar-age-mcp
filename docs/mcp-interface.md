@@ -4,8 +4,8 @@
 
 - Display name: `data-mcp-server`
 - Package name: `data-mcp-server`
-- Initial transport: stdio
-- Planned remote transport: stateless Streamable HTTP
+- Initial transport: stateless Streamable HTTP
+- Default endpoint: `http://127.0.0.1:3000/mcp`
 - Initial capabilities: tools only
 
 All v0.1 tools are read-only. They must not write files, call remote services,
@@ -285,13 +285,20 @@ Initial error codes:
 
 ## Transport Decision
 
-Use stdio for v0.1 because the server is local, stateless, and has no
-authentication requirements. Add Streamable HTTP only when remote or
-multi-client usage is an actual requirement.
+Use stateless Streamable HTTP for v0.1. The server accepts JSON-RPC requests
+through `POST /mcp` and returns JSON responses.
 
-If Streamable HTTP is added:
-
-- Use stateless JSON responses.
-- Bind to `127.0.0.1` for local deployment.
-- Validate the `Origin` header.
+- Bind to `127.0.0.1` by default.
+- Do not create or track MCP sessions.
+- Create a request-scoped server and transport for each POST request.
+- Validate both the `Host` and browser `Origin` headers.
+- Allow requests without an `Origin` header for non-browser MCP clients.
+- Return `405 Method Not Allowed` for `GET` and `DELETE`.
 - Keep request handlers free of shared mutable session state.
+
+The default port is `3000` and can be changed with `MCP_PORT`. Browser origins
+can be explicitly allowed with the comma-separated `MCP_ALLOWED_ORIGINS`
+environment variable.
+
+This local-only transport has no authentication. Adding remote exposure
+requires a separate authentication and TLS design.

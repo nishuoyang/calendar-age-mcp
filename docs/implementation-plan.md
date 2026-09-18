@@ -10,8 +10,7 @@
 | Validation | Zod |
 | Chinese calendar conversion | `lunar-javascript`, subject to range verification |
 | Tests | Vitest |
-| Local transport | stdio |
-| Remote transport later | stateless Streamable HTTP |
+| Transport | stateless Streamable HTTP |
 
 Use the official modern MCP APIs:
 
@@ -31,6 +30,8 @@ data-mcp/
 ├── src/
 │   ├── index.ts
 │   ├── constants.ts
+│   ├── http-server.ts
+│   ├── server.ts
 │   ├── schemas/
 │   │   └── calendar.ts
 │   ├── domain/
@@ -72,7 +73,7 @@ service modules that can be unit tested without starting the server.
 
 - Create package metadata and strict TypeScript configuration.
 - Add MCP SDK, Zod, and test tooling.
-- Create the stdio entry point.
+- Create the Streamable HTTP entry point.
 - Add lint/build/test scripts.
 
 Exit criteria:
@@ -175,7 +176,8 @@ Candidate calendars:
 npm install
 npm run build
 npm test
-npx @modelcontextprotocol/inspector node dist/index.js
+npm start
+npx @modelcontextprotocol/inspector --url http://127.0.0.1:3000/mcp
 ```
 
 The exact test command will be fixed when the scaffold is created. The build
@@ -189,8 +191,6 @@ and test commands must be runnable from the repository root.
 3. Nominal age boundary: recommended Chinese New Year, with 立春 reserved for
    a separate rule.
 4. Whether other calendars are planned for v0.2 or later.
-5. Whether remote Streamable HTTP is required for the first release.
-
 These decisions should be recorded in a short ADR before the public interface
 is frozen.
 

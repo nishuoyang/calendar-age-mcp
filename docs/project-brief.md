@@ -33,7 +33,7 @@ The first target scenario is:
 - Chronological elapsed days.
 - A configurable leap-month birthday policy.
 - Structured JSON output and a concise Markdown representation.
-- Local stdio transport.
+- Stateless Streamable HTTP transport bound to localhost by default.
 
 ## Out of Scope for v0.1
 
@@ -94,5 +94,5 @@ v0.1 is complete when:
    birthday in each requested year.
 4. Invalid leap-month and invalid month-length cases return stable error codes.
 5. `npm run build` succeeds.
-6. The server starts over stdio and works in MCP Inspector.
+6. The server starts over Streamable HTTP and works in MCP Inspector.
 7. Unit tests pass in the documented Node.js version.
