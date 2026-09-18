@@ -60,7 +60,10 @@ http://127.0.0.1:3000/mcp
 环境变量：
 
 - `MCP_PORT`：监听端口，默认 `3000`
+- `MCP_HOST`：监听地址，默认 `127.0.0.1`；容器部署（如 Docker）时需设为 `0.0.0.0`
 - `MCP_ALLOWED_ORIGINS`：可选的浏览器 Origin 白名单，多个值使用逗号分隔
+- `MCP_ALLOWED_HOSTS`：可选的 `Host` 请求头白名单，多个值使用逗号分隔。默认只接受 `127.0.0.1` / `localhost` / `[::1]` 的 Host 头以防御 DNS rebinding；公网部署时须把公网 IP 或域名加入白名单，否则请求返回 `403 Forbidden host`
+- `MCP_API_TOKEN`：可选。设置后所有请求必须携带 `Authorization: Bearer <token>` 头，否则返回 `401 Unauthorized`（响应含 `WWW-Authenticate: Bearer`）。未设置则行为与旧版本一致
 
 服务默认绑定 `127.0.0.1`，校验 `Host` 和浏览器 `Origin` 请求头，并返回 JSON 响应。发送到 `/mcp` 的 `GET` 和 `DELETE` 请求会返回 `405 Method Not Allowed`。
 

@@ -100,6 +100,55 @@ describe("Streamable HTTP contract", () => {
     });
   });
 
+  it("requires a bearer token when one is configured", async () => {
+    const server = await startMcpHttpServer({ port: 0, apiToken: "test-secret" });
+    runningServers.push(server);
+
+    const headers = {
+      "Content-Type": "application/json",
+      Accept: "application/json, text/event-stream",
+    };
+    const body = JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "test", version: "0.1.0" },
+      },
+    });
+
+    const missing = await fetch(server.endpoint, {
+      method: "POST",
+      headers,
+      body,
+    });
+    expect(missing.status).toBe(401);
+    expect(missing.headers.get("www-authenticate")).toContain("Bearer");
+
+    const wrong = await fetch(server.endpoint, {
+      method: "POST",
+      headers: { ...headers, Authorization: "Bearer wrong-secret" },
+      body,
+    });
+    expect(wrong.status).toBe(401);
+
+    const valid = await fetch(server.endpoint, {
+      method: "POST",
+      headers: { ...headers, Authorization: "Bearer test-secret" },
+      body,
+    });
+    expect(valid.status).toBe(200);
+
+    const wrongScheme = await fetch(server.endpoint, {
+      method: "POST",
+      headers: { ...headers, Authorization: "Basic dGVzdDp0ZXN0" },
+      body,
+    });
+    expect(wrongScheme.status).toBe(401);
+  });
+
   it("supports preflight and rejects unsupported methods", async () => {
     const server = await startTestServer();
     const origin = new URL(server.endpoint).origin;

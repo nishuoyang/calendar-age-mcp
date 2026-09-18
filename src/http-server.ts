@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import {
   createServer as createHttpServer,
   type IncomingMessage,
@@ -18,6 +19,8 @@ export interface McpHttpServerOptions {
   host?: string;
   port?: number;
   allowedOrigins?: readonly string[];
+  allowedHosts?: readonly string[];
+  apiToken?: string;
 }
 
 export interface RunningMcpHttpServer {
@@ -46,12 +49,18 @@ export async function startMcpHttpServer(
   const configuredOrigins = options.allowedOrigins
     ? new Set(options.allowedOrigins)
     : undefined;
+  const allowedHosts = options.allowedHosts
+    ? new Set(options.allowedHosts)
+    : undefined;
+  const apiToken = options.apiToken;
   let allowedOrigins = configuredOrigins ?? new Set<string>();
 
   const server = createHttpServer((request, response) => {
-    void handleRequest(request, response, allowedOrigins).catch((error: unknown) => {
-      handleUnhandledHttpError(response, error);
-    });
+    void handleRequest(request, response, allowedOrigins, allowedHosts, apiToken).catch(
+      (error: unknown) => {
+        handleUnhandledHttpError(response, error);
+      },
+    );
   });
 
   await listen(server, host, requestedPort);
@@ -77,6 +86,8 @@ async function handleRequest(
   request: IncomingMessage,
   response: ServerResponse,
   allowedOrigins: ReadonlySet<string>,
+  allowedHosts: ReadonlySet<string> | undefined,
+  apiToken: string | undefined,
 ): Promise<void> {
   const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
   if (pathname !== MCP_HTTP_PATH) {
@@ -85,8 +96,14 @@ async function handleRequest(
   }
 
   const host = request.headers.host;
-  if (!host || !isAllowedHost(host)) {
+  if (!host || !isAllowedHost(host, allowedHosts)) {
     sendJsonRpcError(response, 403, -32000, "Forbidden host.");
+    return;
+  }
+
+  if (apiToken !== undefined && !requestHasValidToken(request, apiToken)) {
+    response.setHeader("WWW-Authenticate", 'Bearer realm="mcp"');
+    sendJsonRpcError(response, 401, -32000, "Unauthorized.");
     return;
   }
 
@@ -170,11 +187,47 @@ function handleUnhandledHttpError(
   }
 }
 
-function isAllowedHost(hostHeader: string): boolean {
+const DEFAULT_ALLOWED_HOSTNAMES: ReadonlySet<string> = new Set([
+  "127.0.0.1",
+  "localhost",
+  "[::1]",
+]);
+
+function requestHasValidToken(
+  request: IncomingMessage,
+  expectedToken: string,
+): boolean {
+  const provided = request.headers.authorization;
+  if (typeof provided !== "string") {
+    return false;
+  }
+  const scheme = provided.slice(0, 7).toLowerCase();
+  if (scheme !== "bearer ") {
+    return false;
+  }
+  return safeEqual(provided.slice(7), expectedToken);
+}
+
+function safeEqual(a: string, b: string): boolean {
+  const aBuffer = Buffer.from(a);
+  const bBuffer = Buffer.from(b);
+  if (aBuffer.length !== bBuffer.length) {
+    return false;
+  }
+  return timingSafeEqual(aBuffer, bBuffer);
+}
+
+function isAllowedHost(
+  hostHeader: string,
+  allowedHosts: ReadonlySet<string> | undefined,
+): boolean {
   const normalized = hostHeader.toLowerCase();
   try {
     const hostname = new URL(`http://${normalized}`).hostname;
-    return ["127.0.0.1", "localhost", "[::1]"].includes(hostname);
+    if (DEFAULT_ALLOWED_HOSTNAMES.has(hostname)) {
+      return true;
+    }
+    return allowedHosts !== undefined && allowedHosts.has(hostname);
   } catch {
     return false;
   }

@@ -57,7 +57,17 @@ http://127.0.0.1:3000/mcp
 Environment variables:
 
 - `MCP_PORT`: listening port, default `3000`
+- `MCP_HOST`: listen address, default `127.0.0.1`; set to `0.0.0.0` when
+  running inside a container (e.g. Docker)
 - `MCP_ALLOWED_ORIGINS`: optional comma-separated browser origin allowlist
+- `MCP_ALLOWED_HOSTS`: optional comma-separated `Host` header allowlist. By
+  default only `127.0.0.1` / `localhost` / `[::1]` are accepted as the `Host`
+  header to prevent DNS rebinding; for public deployment add the public IP or
+  domain here, otherwise requests return `403 Forbidden host`
+- `MCP_API_TOKEN`: optional. When set, every request must carry an
+  `Authorization: Bearer <token>` header or it returns `401 Unauthorized`
+  (with a `WWW-Authenticate: Bearer` response header). Unset keeps the
+  previous behavior
 
 The server binds to `127.0.0.1`, validates the `Host` and browser `Origin`
 headers, and returns JSON responses. `GET` and `DELETE` requests to `/mcp`

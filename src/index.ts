@@ -8,15 +8,20 @@ import {
 import { startMcpHttpServer } from "./http-server.js";
 
 const port = parsePort(process.env.MCP_PORT);
+const host = parseHost(process.env.MCP_HOST);
 const allowedOrigins = parseAllowedOrigins(process.env.MCP_ALLOWED_ORIGINS);
+const allowedHosts = parseAllowedHosts(process.env.MCP_ALLOWED_HOSTS);
+const apiToken = parseApiToken(process.env.MCP_API_TOKEN);
 const runningServer = await startMcpHttpServer({
-  host: DEFAULT_HTTP_HOST,
+  host,
   port,
   ...(allowedOrigins.length > 0 ? { allowedOrigins } : {}),
+  ...(allowedHosts.length > 0 ? { allowedHosts } : {}),
+  ...(apiToken !== undefined ? { apiToken } : {}),
 });
 
 console.error(
-  `data-mcp-server listening at http://${DEFAULT_HTTP_HOST}:${runningServer.port}${MCP_HTTP_PATH}`,
+  `data-mcp-server listening at http://${host}:${runningServer.port}${MCP_HTTP_PATH}`,
 );
 
 let shuttingDown = false;
@@ -50,6 +55,55 @@ function parsePort(value: string | undefined): number {
   }
 
   return port;
+}
+
+function parseHost(value: string | undefined): string {
+  if (value === undefined || value.trim() === "") {
+    return DEFAULT_HTTP_HOST;
+  }
+
+  const host = value.trim();
+  if (host.includes("://") || host.includes("/")) {
+    throw new Error(
+      `MCP_HOST must be a bare hostname or IP (e.g. "0.0.0.0"); received "${value}".`,
+    );
+  }
+
+  return host;
+}
+
+function parseAllowedHosts(value: string | undefined): string[] {
+  if (value === undefined || value.trim() === "") {
+    return [];
+  }
+
+  const hosts = value
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter((host) => host.length > 0);
+
+  for (const host of hosts) {
+    if (host.includes("://") || host.includes("/") || host.includes(" ")) {
+      throw new Error(
+        `MCP_ALLOWED_HOSTS contains an invalid host "${host}".`,
+      );
+    }
+  }
+
+  return hosts;
+}
+
+function parseApiToken(value: string | undefined): string | undefined {
+  const token = value?.trim();
+  if (token === undefined || token === "") {
+    return undefined;
+  }
+  if (/\s/.test(token) || token.includes(",")) {
+    throw new Error(
+      "MCP_API_TOKEN must not contain whitespace or commas.",
+    );
+  }
+  return token;
 }
 
 function parseAllowedOrigins(value: string | undefined): string[] {
